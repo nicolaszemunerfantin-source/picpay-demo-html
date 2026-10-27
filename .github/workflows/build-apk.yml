@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'picpay-visual-android-final-source.zip'
+      - 'picpay-visual-android-final-source-v6.zip'
       - '.github/workflows/build-apk.yml'
 permissions:
   contents: read
@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Extract Android project
-        run: python3 -c "import zipfile; zipfile.ZipFile('picpay-visual-android-final-source.zip').extractall('android')"
+        run: python3 -c "import zipfile; zipfile.ZipFile('picpay-visual-android-final-source-v6.zip').extractall('android')"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -23,12 +23,13 @@ jobs:
           SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
           SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager -print -quit)"
           test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" --install 'platforms;android-35' 'build-tools;35.0.0'
       - name: Build APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew --no-daemon assembleDebug
+          ./gradlew --no-daemon --stacktrace assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: PicPay-Visual-APK
