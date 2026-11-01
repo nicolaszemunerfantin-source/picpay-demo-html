@@ -1,0 +1,37 @@
+name: Build AppLab APK
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'AppLab-Android-project.zip'
+      - '.github/workflows/build-applab-apk.yml'
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract Android project
+        run: python3 -c "import zipfile; zipfile.ZipFile('AppLab-Android-project.zip').extractall('android')"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android SDK components
+        run: |
+          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --install 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Build debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew --no-daemon --stacktrace assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AppLab-Editor-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
