@@ -6,7 +6,7 @@ on:
       - 'AppLab-Android-project.zip'
       - '.github/workflows/build-applab-apk.yml'
 permissions:
-  contents: read
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -35,3 +35,15 @@ jobs:
           name: AppLab-Editor-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+      - name: Verify APK and publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          TOOLS="${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools/35.0.0"
+          "$TOOLS/apksigner" verify --verbose "$APK"
+          "$TOOLS/aapt" dump badging "$APK" | head -10
+          python3 -c "import zipfile; z=zipfile.ZipFile('$APK'); s=z.read('assets/index.html').decode(); assert 'Input de valor' in s and 'AppLabAndroid' in s and 'preview-mode' in s; assert 'classes.dex' in z.namelist()"
+          cp "$APK" AppLab-Editor-v1.apk
+          gh release view applab-editor-v1 >/dev/null 2>&1 || gh release create applab-editor-v1 --title 'AppLab Editor v1' --notes 'Editor visual para Android.'
+          gh release upload applab-editor-v1 AppLab-Editor-v1.apk --clobber
