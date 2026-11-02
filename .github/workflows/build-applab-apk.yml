@@ -43,7 +43,7 @@ jobs:
           TOOLS="${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools/35.0.0"
           "$TOOLS/apksigner" verify --verbose "$APK"
           "$TOOLS/aapt" dump badging "$APK" | head -10
-          python3 -c "import zipfile; z=zipfile.ZipFile('$APK'); s=z.read('assets/index.html').decode(); assert 'Input de valor' in s and 'AppLabAndroid' in s and 'preview-mode' in s; assert 'classes.dex' in z.namelist()"
-          cp "$APK" AppLab-Editor-v2.apk
-          gh release view applab-editor-v2 >/dev/null 2>&1 || gh release create applab-editor-v2 --title 'AppLab Editor v2' --notes 'Editor visual para Android.'
-          gh release upload applab-editor-v2 AppLab-Editor-v2.apk --clobber
+          python3 -c "import zipfile; z=zipfile.ZipFile('$APK'); s=z.read('assets/index.html').decode(); assert 'Input de valor centralizado' in s and 'Input de valor' in s and 'AppLabAndroid' in s and 'preview-mode' in s; assert 'classes.dex' in z.namelist()"
+          cp "$APK" AppLab-Editor-v3.apk
+          gh release view applab-editor-v3 >/dev/null 2>&1 || gh release create applab-editor-v3 --title 'AppLab Editor v3' --notes 'Editor visual para Android.'
+          gh release upload applab-editor-v3 AppLab-Editor-v3.apk --clobber
