@@ -1,9 +1,9 @@
-name: Build PicPay demo APK
+name: PicPay Visual — current Android source build checkpoint
 on:
   workflow_dispatch:
   push:
     paths:
-      - 'picpay-visual-android-final-source-v6.zip'
+      - 'PicPay-Visual-Android-source-pairing-scaffold.zip'
       - '.github/workflows/build-apk.yml'
 permissions:
   contents: read
@@ -12,26 +12,35 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Extract Android project
-        run: python3 -c "import zipfile; zipfile.ZipFile('picpay-visual-android-final-source-v6.zip').extractall('android')"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - name: Install Android SDK components
+      - uses: android-actions/setup-android@v3
+      - name: Extract current source tree (not legacy v6)
         run: |
-          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
-          SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager -print -quit)"
-          test -x "$SDKMANAGER"
-          yes | "$SDKMANAGER" --licenses >/dev/null || true
-          "$SDKMANAGER" --install 'platforms;android-35' 'build-tools;35.0.0'
-      - name: Build APK
+          test -f PicPay-Visual-Android-source-pairing-scaffold.zip
+          unzip -q PicPay-Visual-Android-source-pairing-scaffold.zip
+          test -f simulador-pix-android/app/src/main/java/com/zapia/skyblock/MainActivity.java
+          test ! -e simulador-pix-android/app/src/main/java/com/zapia/skyblock/MainActivity.kt
+          grep -q 'versionCode = 3' simulador-pix-android/app/build.gradle.kts
+      - name: Verify no signing key or Firebase secrets in source
         run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew --no-daemon --stacktrace assembleDebug
+          test ! -e simulador-pix-android/app/google-services.json
+          ! find simulador-pix-android -type f \( -name '*.jks' -o -name '*.keystore' \) | grep .
+      - name: Build debug APK checkpoint only
+        working-directory: simulador-pix-android
+        run: bash gradlew --no-daemon assembleDebug
+      - name: Record build checkpoint status
+        run: |
+          {
+            echo '## Debug APK checkpoint'
+            echo '- Built from the current simulador-pix-android source tree, packaged as a source archive for this workflow.'
+            echo '- This unsigned-by-release-key debug build is not an installable upgrade and is not remote-push-ready.'
+            echo '- Remote sending remains disabled pending a configured backend and end-to-end validation.'
+          } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
-          name: PicPay-Visual-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: picpay-current-source-debug-apk-build-checkpoint
+          path: simulador-pix-android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
