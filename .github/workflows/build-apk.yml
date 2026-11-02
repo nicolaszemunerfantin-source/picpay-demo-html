@@ -12,11 +12,17 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK
+        run: |
+          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --install 'platforms;android-35' 'build-tools;35.0.0'
       - name: Extract current source tree (not legacy v6)
         run: |
           test -f PicPay-Visual-Android-source-pairing-scaffold.zip
@@ -30,14 +36,13 @@ jobs:
           ! find simulador-pix-android -type f \( -name '*.jks' -o -name '*.keystore' \) | grep .
       - name: Build debug APK checkpoint only
         working-directory: simulador-pix-android
-        run: bash gradlew --no-daemon assembleDebug
+        run: bash gradlew --no-daemon --max-workers=1 assembleDebug
       - name: Record build checkpoint status
         run: |
           {
             echo '## Debug APK checkpoint'
-            echo '- Built from the current simulador-pix-android source tree, packaged as a source archive for this workflow.'
-            echo '- This unsigned-by-release-key debug build is not an installable upgrade and is not remote-push-ready.'
-            echo '- Remote sending remains disabled pending a configured backend and end-to-end validation.'
+            echo '- Built from current PicPay source. This debug build is not an install-over update and not remote-push-ready.'
+            echo '- Remote sending remains disabled until secure backend setup and end-to-end validation.'
           } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
