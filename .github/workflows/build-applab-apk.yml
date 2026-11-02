@@ -43,7 +43,7 @@ jobs:
           TOOLS="${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools/35.0.0"
           "$TOOLS/apksigner" verify --verbose "$APK"
           "$TOOLS/aapt" dump badging "$APK" | head -10
-          python3 -c "import zipfile; z=zipfile.ZipFile('$APK'); s=z.read('assets/index.html').decode(); assert 'Usar cor do fundo automaticamente' in s and 'Input de valor' in s and 'AppLabAndroid' in s and 'preview-mode' in s; assert 'classes.dex' in z.namelist()"
-          cp "$APK" AppLab-Editor-v5.apk
-          gh release view applab-editor-v5 >/dev/null 2>&1 || gh release create applab-editor-v5 --title 'AppLab Editor v5' --notes 'Editor visual para Android.'
-          gh release upload applab-editor-v5 AppLab-Editor-v5.apk --clobber
+          python3 -c "import zipfile; z=zipfile.ZipFile('$APK'); s=z.read('assets/index.html').decode(); assert 'Usar cor do fundo automaticamente' in s and 'backgroundColorFor(it,s)' in s and 'Input de valor' in s and 'AppLabAndroid' in s and 'preview-mode' in s; assert 'classes.dex' in z.namelist()"
+          cp "$APK" AppLab-Editor-v6.apk
+          gh release view applab-editor-v6 >/dev/null 2>&1 || gh release create applab-editor-v6 --title 'AppLab Editor v6' --notes 'Editor visual para Android.'
+          gh release upload applab-editor-v6 AppLab-Editor-v6.apk --clobber
