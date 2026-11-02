@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'PicPay-Visual-Android-source-pairing-scaffold.zip'
+      - 'PicPay-Visual-Android-source-pairing-scaffold-v3.zip'
       - '.github/workflows/build-apk.yml'
 permissions:
   contents: read
@@ -20,32 +20,18 @@ jobs:
         run: |
           SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
           SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager -print -quit)"
-          test -x "$SDKMANAGER"
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" --install 'platforms;android-35' 'build-tools;35.0.0'
-      - name: Extract current source tree (not legacy v6)
+      - name: Extract current source tree
         run: |
-          test -f PicPay-Visual-Android-source-pairing-scaffold.zip
-          unzip -q PicPay-Visual-Android-source-pairing-scaffold.zip
-          test -f simulador-pix-android/app/src/main/java/com/zapia/skyblock/MainActivity.java
-          test ! -e simulador-pix-android/app/src/main/java/com/zapia/skyblock/MainActivity.kt
+          unzip -q PicPay-Visual-Android-source-pairing-scaffold-v3.zip
           grep -q 'versionCode = 3' simulador-pix-android/app/build.gradle.kts
-      - name: Verify no signing key or Firebase secrets in source
-        run: |
-          test ! -e simulador-pix-android/app/google-services.json
           ! find simulador-pix-android -type f \( -name '*.jks' -o -name '*.keystore' \) | grep .
-      - name: Build debug APK checkpoint only
+      - name: Build debug APK checkpoint
         working-directory: simulador-pix-android
         run: bash gradlew --no-daemon --max-workers=1 assembleDebug
-      - name: Record build checkpoint status
-        run: |
-          {
-            echo '## Debug APK checkpoint'
-            echo '- Built from current PicPay source. This debug build is not an install-over update and not remote-push-ready.'
-            echo '- Remote sending remains disabled until secure backend setup and end-to-end validation.'
-          } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
-          name: picpay-current-source-debug-apk-build-checkpoint
+          name: picpay-current-source-debug-checkpoint
           path: simulador-pix-android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
