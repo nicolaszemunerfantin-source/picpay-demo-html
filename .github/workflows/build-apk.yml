@@ -1,12 +1,12 @@
-name: PicPay Visual — correção de conexão local
+name: PicPay Visual — teste técnico de aviso em segundo plano
 on:
   workflow_dispatch:
   push:
     paths:
-      - 'PicPay-Visual-LAN-pairing-response-fix-v8.zip'
+      - 'PicPay-Visual-LAN-background-notifications-source-v10.zip'
       - '.github/workflows/build-apk.yml'
 permissions:
-  contents: write
+  contents: read
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -24,9 +24,9 @@ jobs:
           "$SDKMANAGER" --install 'platforms;android-35' 'build-tools;35.0.0'
       - name: Extract source
         run: |
-          unzip -q PicPay-Visual-LAN-pairing-response-fix-v8.zip
+          unzip -q PicPay-Visual-LAN-background-notifications-source-v10.zip
           ! find simulador-pix-android -type f \( -name '*.jks' -o -name '*.keystore' \) | grep .
-      - name: Build APK
+      - name: Build checkpoint
         working-directory: simulador-pix-android
         run: bash gradlew --no-daemon --max-workers=1 assembleDebug
       - name: Verify APK
@@ -35,18 +35,12 @@ jobs:
           SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
           "$SDK_ROOT/build-tools/35.0.0/aapt" dump badging "$APK" | head -3
           "$SDK_ROOT/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK"
-          unzip -p "$APK" assets/index.html > /tmp/built-index.html
+          unzip -p "$APK" assets/index.html >/tmp/built-index.html
           cmp /tmp/built-index.html simulador-pix-android/app/src/main/assets/index.html
-          grep -q 'Aparelhos na mesma rede' /tmp/built-index.html
+          grep -q stopLanDeviceSearch /tmp/built-index.html
           sha256sum "$APK"
-          cp "$APK" PicPay-Visual-conexao-WiFi-v8.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: picpay-conexao-WiFi-v8
-          path: PicPay-Visual-conexao-WiFi-v8.apk
+          name: picpay-background-internal-checkpoint
+          path: simulador-pix-android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
-      - name: Publish test APK
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "conexao-wifi-v8-${{ github.run_id }}" PicPay-Visual-conexao-WiFi-v8.apk --title 'PicPay Visual — correção conexão Wi-Fi' --notes 'Versão de depuração experimental; sem teste em dois aparelhos. Pareamento e aviso dependem da sessão local e das permissões. Não movimenta dinheiro.' --prerelease
