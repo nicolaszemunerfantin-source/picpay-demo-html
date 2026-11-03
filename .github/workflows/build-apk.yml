@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'PicPay-Visual-LAN-pairing-source-v4.zip'
+      - 'PicPay-Visual-LAN-pairing-source-v5.zip'
       - '.github/workflows/build-apk.yml'
 permissions:
   contents: read
@@ -24,14 +24,24 @@ jobs:
           "$SDKMANAGER" --install 'platforms;android-35' 'build-tools;35.0.0'
       - name: Extract current source tree
         run: |
-          unzip -q PicPay-Visual-LAN-pairing-source-v4.zip
+          unzip -q PicPay-Visual-LAN-pairing-source-v5.zip
           grep -q 'versionCode = 3' simulador-pix-android/app/build.gradle.kts
           ! find simulador-pix-android -type f \( -name '*.jks' -o -name '*.keystore' \) | grep .
       - name: Build debug APK checkpoint
         working-directory: simulador-pix-android
         run: bash gradlew --no-daemon --max-workers=1 assembleDebug
+      - name: Verify APK package, signature and HTML
+        run: |
+          APK=simulador-pix-android/app/build/outputs/apk/debug/app-debug.apk
+          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          "$SDK_ROOT/build-tools/35.0.0/aapt" dump badging "$APK" | head -3
+          "$SDK_ROOT/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK"
+          unzip -p "$APK" assets/index.html > /tmp/built-index.html
+          cmp /tmp/built-index.html simulador-pix-android/app/src/main/assets/index.html
+          grep -q 'Aparelhos na mesma rede' /tmp/built-index.html
+          sha256sum "$APK"
       - uses: actions/upload-artifact@v4
         with:
-          name: picpay-lan-pairing-debug-checkpoint
+          name: picpay-lan-pairing-debug-checkpoint-v5
           path: simulador-pix-android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
