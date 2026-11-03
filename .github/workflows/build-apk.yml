@@ -1,9 +1,9 @@
-name: PicPay Visual — current Android source build checkpoint
+name: PicPay Visual — local Wi-Fi pairing checkpoint
 on:
   workflow_dispatch:
   push:
     paths:
-      - 'PicPay-Visual-Android-source-pairing-scaffold-v3.zip'
+      - 'PicPay-Visual-LAN-pairing-source-v4.zip'
       - '.github/workflows/build-apk.yml'
 permissions:
   contents: read
@@ -24,7 +24,7 @@ jobs:
           "$SDKMANAGER" --install 'platforms;android-35' 'build-tools;35.0.0'
       - name: Extract current source tree
         run: |
-          unzip -q PicPay-Visual-Android-source-pairing-scaffold-v3.zip
+          unzip -q PicPay-Visual-LAN-pairing-source-v4.zip
           grep -q 'versionCode = 3' simulador-pix-android/app/build.gradle.kts
           ! find simulador-pix-android -type f \( -name '*.jks' -o -name '*.keystore' \) | grep .
       - name: Build debug APK checkpoint
@@ -32,6 +32,6 @@ jobs:
         run: bash gradlew --no-daemon --max-workers=1 assembleDebug
       - uses: actions/upload-artifact@v4
         with:
-          name: picpay-current-source-debug-checkpoint
+          name: picpay-lan-pairing-debug-checkpoint
           path: simulador-pix-android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
