@@ -1,9 +1,9 @@
-name: PicPay Visual — local Wi-Fi pairing test APK
+name: PicPay Visual — aviso de simulação por Wi-Fi
 on:
   workflow_dispatch:
   push:
     paths:
-      - 'PicPay-Visual-LAN-pairing-source-v5.zip'
+      - 'PicPay-Visual-LAN-pix-notification-source-v6.zip'
       - '.github/workflows/build-apk.yml'
 permissions:
   contents: write
@@ -22,15 +22,14 @@ jobs:
           SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager -print -quit)"
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" --install 'platforms;android-35' 'build-tools;35.0.0'
-      - name: Extract current source tree
+      - name: Extract source
         run: |
-          unzip -q PicPay-Visual-LAN-pairing-source-v5.zip
-          grep -q 'versionCode = 3' simulador-pix-android/app/build.gradle.kts
+          unzip -q PicPay-Visual-LAN-pix-notification-source-v6.zip
           ! find simulador-pix-android -type f \( -name '*.jks' -o -name '*.keystore' \) | grep .
-      - name: Build debug APK checkpoint
+      - name: Build APK
         working-directory: simulador-pix-android
         run: bash gradlew --no-daemon --max-workers=1 assembleDebug
-      - name: Verify APK package, signature and HTML
+      - name: Verify APK
         run: |
           APK=simulador-pix-android/app/build/outputs/apk/debug/app-debug.apk
           SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
@@ -40,14 +39,14 @@ jobs:
           cmp /tmp/built-index.html simulador-pix-android/app/src/main/assets/index.html
           grep -q 'Aparelhos na mesma rede' /tmp/built-index.html
           sha256sum "$APK"
-          cp "$APK" PicPay-Visual-WiFi-Teste.apk
+          cp "$APK" PicPay-Visual-aviso-WiFi-teste.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: picpay-lan-pairing-debug-test
-          path: PicPay-Visual-WiFi-Teste.apk
+          name: picpay-lan-aviso-simulado-teste
+          path: PicPay-Visual-aviso-WiFi-teste.apk
           if-no-files-found: error
-      - name: Publish test APK for download
+      - name: Publish test APK
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "wifi-teste-${{ github.run_id }}" PicPay-Visual-WiFi-Teste.apk --title 'PicPay Visual — teste Wi-Fi' --notes 'APK de depuração para testar a descoberta e solicitação de conexão na mesma rede Wi-Fi. Não testado em aparelhos. A confirmação local não permite ainda enviar notificações entre celulares; sem Pix real.' --prerelease
+          gh release create "aviso-wifi-teste-${{ github.run_id }}" PicPay-Visual-aviso-WiFi-teste.apk --title 'PicPay Visual — aviso Wi-Fi experimental' --notes 'APK de depuração sem teste em dois aparelhos. O envio ocorre somente na conexão ativa de rede local; usa notificação do Android, não bolha flutuante. Simulação, sem movimentação real.' --prerelease
