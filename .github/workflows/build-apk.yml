@@ -1,4 +1,4 @@
-name: PicPay Visual — local Wi-Fi pairing checkpoint
+name: PicPay Visual — local Wi-Fi pairing test APK
 on:
   workflow_dispatch:
   push:
@@ -6,7 +6,7 @@ on:
       - 'PicPay-Visual-LAN-pairing-source-v5.zip'
       - '.github/workflows/build-apk.yml'
 permissions:
-  contents: read
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -40,8 +40,14 @@ jobs:
           cmp /tmp/built-index.html simulador-pix-android/app/src/main/assets/index.html
           grep -q 'Aparelhos na mesma rede' /tmp/built-index.html
           sha256sum "$APK"
+          cp "$APK" PicPay-Visual-WiFi-Teste.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: picpay-lan-pairing-debug-checkpoint-v5
-          path: simulador-pix-android/app/build/outputs/apk/debug/app-debug.apk
+          name: picpay-lan-pairing-debug-test
+          path: PicPay-Visual-WiFi-Teste.apk
           if-no-files-found: error
+      - name: Publish test APK for download
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "wifi-teste-${{ github.run_id }}" PicPay-Visual-WiFi-Teste.apk --title 'PicPay Visual — teste Wi-Fi' --notes 'APK de depuração para testar a descoberta e solicitação de conexão na mesma rede Wi-Fi. Não testado em aparelhos. A confirmação local não permite ainda enviar notificações entre celulares; sem Pix real.' --prerelease
