@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'PicPay-Visual-LAN-pix-notification-source-v6.zip'
+      - 'PicPay-Visual-LAN-pix-notification-source-v7.zip'
       - '.github/workflows/build-apk.yml'
 permissions:
   contents: write
@@ -24,7 +24,7 @@ jobs:
           "$SDKMANAGER" --install 'platforms;android-35' 'build-tools;35.0.0'
       - name: Extract source
         run: |
-          unzip -q PicPay-Visual-LAN-pix-notification-source-v6.zip
+          unzip -q PicPay-Visual-LAN-pix-notification-source-v7.zip
           ! find simulador-pix-android -type f \( -name '*.jks' -o -name '*.keystore' \) | grep .
       - name: Build APK
         working-directory: simulador-pix-android
